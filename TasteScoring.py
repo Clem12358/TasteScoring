@@ -13,7 +13,9 @@ SCOPE = ["https://spreadsheets.google.com/feeds",
 
 # Replace with your Google Sheet ID
 SHEET_ID = "1d_IqouXaflv0vl1xESD--T8eVHI5ACtD-ZklkDuZ9MQ"
-CREDENTIALS_FILE = "/Users/clementdurix/Library/CloudStorage/OneDrive-Personal/1. UNI/Uncertainty/TasteScoringCredentials.json"
+import json
+creds_dict = st.secrets["google"]
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 
 # --------------------------
 # 2. LOAD PRODUCTS
