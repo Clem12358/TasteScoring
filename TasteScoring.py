@@ -29,7 +29,7 @@ PRODUCTS = [
     "Lettuce","Bananas","Apples","Pears","Oranges","Mandarins","Lemons","Limes","Grapefruits","Kiwis",
     "Mangoes","Papayas","Grapes","Melons","Pomegranates","Blueberries","Strawberries","Raspberries",
     "Blackberries","Peaches","Apricots","Dates","dried figs","dried apricots","dried grapes","Fruit mix",
-    "Whole milk","Liquid cream","Plain yogurt","staberry yogurt","Greek yogurt","Fromage blanc","Skyr",
+    "Whole milk","Liquid cream","Plain yogurt","straberry yogurt","Greek yogurt","Fromage blanc","Skyr",
     "Kefir","Toasts","Emmental","Gruyère","Raclette cheese","Mozzarella","Feta","Roquefort","Fromage frais",
     "Fromage rapé","Cream cheese","Cottage cheese","Mascarpone","Ricotta","Parmesan","Grana Padano",
     "fondue cheese","eggs","Ketchup","Mayonnaise","Mustard","Bolognese","Pesto","Paprika","Curry",
