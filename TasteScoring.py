@@ -5,6 +5,7 @@ import pandas as pd
 import itertools
 import random
 import json
+import time
 
 # --------------------------
 # 1. CONFIG
@@ -45,8 +46,7 @@ PRODUCTS = list(dict.fromkeys(PRODUCTS))  # remove duplicates
 @st.cache_resource
 def get_sheet_connection():
     client = gspread.authorize(creds)
-    sheet = client.open_by_key(SHEET_ID).sheet1
-    return sheet
+    return client.open_by_key(SHEET_ID).sheet1
 
 sheet = get_sheet_connection()
 
@@ -59,19 +59,19 @@ def load_existing_pairs():
         return pd.DataFrame(columns=["Product1", "Product2", "TasteScore"])
     return pd.DataFrame(data)
 
-existing_df = load_existing_pairs()
-
 # --------------------------
 # 5. GENERATE REMAINING PAIRS
 # --------------------------
-all_pairs = pd.DataFrame(list(itertools.combinations(PRODUCTS, 2)), columns=["Product1", "Product2"])
+def compute_remaining():
+    existing_df = load_existing_pairs()
+    all_pairs = pd.DataFrame(list(itertools.combinations(PRODUCTS, 2)), columns=["Product1", "Product2"])
+    remaining = all_pairs.merge(
+        existing_df[["Product1", "Product2"]], on=["Product1", "Product2"], how="left", indicator=True
+    )
+    remaining = remaining[remaining["_merge"] == "left_only"].drop(columns="_merge")
+    return all_pairs, existing_df, remaining
 
-remaining_pairs = all_pairs.merge(
-    existing_df[["Product1", "Product2"]], on=["Product1", "Product2"], how="left", indicator=True
-)
-remaining_pairs = remaining_pairs[remaining_pairs["_merge"] == "left_only"].drop(columns="_merge")
-remaining_pairs = remaining_pairs.sample(frac=1, random_state=None).reset_index(drop=True)
-
+all_pairs, existing_df, remaining_pairs = compute_remaining()
 total_pairs = len(all_pairs)
 answered_pairs = total_pairs - len(remaining_pairs)
 progress = answered_pairs / total_pairs
@@ -81,15 +81,15 @@ progress = answered_pairs / total_pairs
 # --------------------------
 st.title("🥕 Taste Combination Game")
 st.markdown("Rate how tasty each combination feels from **1 (disgusting)** to **5 (excellent)**.")
-st.progress(progress)
+
+progress_bar = st.progress(progress)
 st.caption(f"Progress: {answered_pairs:,}/{total_pairs:,} combinations rated ({progress:.2%})")
 
-# Keep combo stable until user saves
 if "current_pair" not in st.session_state:
     if remaining_pairs.empty:
         st.session_state.current_pair = None
     else:
-        st.session_state.current_pair = remaining_pairs.iloc[0].to_dict()
+        st.session_state.current_pair = remaining_pairs.sample(1).iloc[0].to_dict()
 
 pair = st.session_state.current_pair
 
@@ -102,18 +102,26 @@ else:
     score = st.slider("Select your taste score:", 1, 5, step=1)
 
     if st.button("💾 Save & Next ➡️"):
+        # Save to Google Sheet
         sheet.append_row([pair["Product1"], pair["Product2"], score])
         st.success(f"Saved {pair['Product1']} + {pair['Product2']} = {score}")
 
+        # Update progress immediately
+        all_pairs, existing_df, remaining_pairs = compute_remaining()
+        total_pairs = len(all_pairs)
+        answered_pairs = total_pairs - len(remaining_pairs)
+        progress = answered_pairs / total_pairs
+        progress_bar.progress(progress)
+        st.caption(f"Progress: {answered_pairs:,}/{total_pairs:,} combinations rated ({progress:.2%})")
+
+        # Show short confirmation before next combo
+        time.sleep(0.8)
+
         # Load next pair
-        remaining_pairs = remaining_pairs[~(
-            (remaining_pairs["Product1"] == pair["Product1"]) &
-            (remaining_pairs["Product2"] == pair["Product2"])
-        )]
         if remaining_pairs.empty:
             st.session_state.current_pair = None
         else:
-            st.session_state.current_pair = remaining_pairs.iloc[0].to_dict()
+            st.session_state.current_pair = remaining_pairs.sample(1).iloc[0].to_dict()
         st.rerun()
 
 st.markdown("---")
