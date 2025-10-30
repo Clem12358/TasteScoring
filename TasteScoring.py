@@ -4,6 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import itertools
 import random
+import json
 
 # --------------------------
 # 1. CONFIG
@@ -13,7 +14,8 @@ SCOPE = ["https://spreadsheets.google.com/feeds",
 
 # Replace with your Google Sheet ID
 SHEET_ID = "1d_IqouXaflv0vl1xESD--T8eVHI5ACtD-ZklkDuZ9MQ"
-import json
+
+# Use Streamlit secrets instead of a local JSON file
 creds_dict = st.secrets["google"]
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPE)
 
@@ -45,7 +47,6 @@ PRODUCTS = list(dict.fromkeys(PRODUCTS))  # remove duplicates (e.g., Spinach app
 # --------------------------
 @st.cache_resource
 def get_sheet_connection():
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPE)
     client = gspread.authorize(creds)
     sheet = client.open_by_key(SHEET_ID).sheet1
     return sheet
