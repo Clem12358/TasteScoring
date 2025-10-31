@@ -120,7 +120,7 @@ else:
         ]
         if next_anchor_candidates:
             st.session_state.current_anchor = next_anchor_candidates[0]
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.success("🎉 All anchors done! You finished every combo.")
             st.stop()
@@ -153,13 +153,13 @@ else:
                 st.success(f"Saved: {p1} + {p2} = {score}")
                 st.session_state.pop("current_pair")  # reset combo after save
                 time.sleep(0.4)
-                st.experimental_rerun()
+                st.rerun()
 
         with col2:
             if st.button("⏭️ Skip Combo"):
                 st.session_state.pop("current_pair")  # reset combo after skip
                 time.sleep(0.3)
-                st.experimental_rerun()
+                st.rerun()
 
 st.markdown("---")
 st.caption("Your progress is always saved. You can close and come back anytime — it will resume exactly where you left off.")
