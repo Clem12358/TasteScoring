@@ -80,11 +80,14 @@ def load_and_clean_existing_pairs():
 
     # If rows were deleted → rewrite clean sheet
     if after < before:
-        st.warning(f"🧹 Cleaning Google Sheet: removed {before - after} old ratings with unwanted products.")
-        sheet.clear()
-        sheet.append_row(expected_headers)
-        for _, row in df.iterrows():
-            sheet.append_row(list(row))
+    st.warning(f"🧹 Cleaning Google Sheet: removed {before - after} old ratings with unwanted products.")
+    sheet.clear()
+    sheet.append_row(expected_headers)
+    
+    # Batch append for efficiency and to avoid rate limits
+    if not df.empty:
+        sheet.append_rows(df.values.tolist(), value_input_option="USER_ENTERED")
+
 
     return df
 
