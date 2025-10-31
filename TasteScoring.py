@@ -115,7 +115,6 @@ else:
 
     # if this anchor is done → switch to next available one
     if anchor_remaining.empty:
-        done_anchor = current_anchor
         next_anchor_candidates = [
             p for p in PRODUCTS if any((remaining_pairs["Product1"] == p) | (remaining_pairs["Product2"] == p))
         ]
@@ -135,27 +134,30 @@ else:
         answered_for_anchor = total_for_anchor - len(anchor_remaining)
         st.caption(f"Progress for {current_anchor}: {answered_for_anchor}/{total_for_anchor}")
 
-        # pick a random combination involving current anchor
-        pair = anchor_remaining.sample(1).iloc[0]
-        p1, p2 = pair["Product1"], pair["Product2"]
+        # --- keep the same combo during slider interaction ---
+        if "current_pair" not in st.session_state:
+            st.session_state.current_pair = anchor_remaining.sample(1).iloc[0].to_dict()
 
-        # ensure anchor always appears first
+        pair = st.session_state.current_pair
+        p1, p2 = pair["Product1"], pair["Product2"]
         if p2 == current_anchor:
             p1, p2 = p2, p1
 
         st.subheader(f"🥇 **{p1} + {p2}**")
-        score = st.slider("Select your taste score:", 1, 5, step=1)
+        score = st.slider("Select your taste score:", 1, 5, step=1, key="taste_slider")
 
         col1, col2 = st.columns(2)
         with col1:
             if st.button("💾 Save & Next ➡️"):
                 sheet.append_row([p1, p2, score])
                 st.success(f"Saved: {p1} + {p2} = {score}")
-                time.sleep(0.5)
+                st.session_state.pop("current_pair")  # reset combo after save
+                time.sleep(0.4)
                 st.experimental_rerun()
+
         with col2:
             if st.button("⏭️ Skip Combo"):
-                st.warning("Skipped — moving to next one.")
+                st.session_state.pop("current_pair")  # reset combo after skip
                 time.sleep(0.3)
                 st.experimental_rerun()
 
