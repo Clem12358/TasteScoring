@@ -57,56 +57,78 @@ def get_sheet_connection():
 sheet = get_sheet_connection()
 
 # --------------------------
-# 4. LOAD EXISTING ANSWERS + AUTO-CLEAN SHEET
+# 4. LOAD EXISTING ANSWERS (READ-ONLY, NON-DESTRUCTIVE)
 # --------------------------
-def load_and_clean_existing_pairs():
-    data = sheet.get_all_records()
+def load_existing_pairs_readonly():
     expected_headers = ["Product1", "Product2", "TasteScore"]
+    rows = sheet.get_all_values()
 
-    # Create headers if missing
-    if not data:
-        headers = sheet.row_values(1)
-        if headers != expected_headers:
-            sheet.clear()
-            sheet.append_row(expected_headers)
+    if not rows:
+        # create headers once if sheet is truly empty
+        sheet.append_row(expected_headers)
         return pd.DataFrame(columns=expected_headers)
 
-    df = pd.DataFrame(data)
+    headers = rows[0]
+    if headers != expected_headers:
+        # Do NOT rewrite – just adapt in-memory
+        # Try to map columns by name if possible
+        try:
+            idx1 = headers.index("Product1")
+            idx2 = headers.index("Product2")
+            idxs = [idx1, idx2]
+            has_score = "TasteScore" in headers
+            idx3 = headers.index("TasteScore") if has_score else None
+        except ValueError:
+            # Fall back to empty if we cannot map
+            return pd.DataFrame(columns=expected_headers)
 
-    # Remove any rows containing unwanted products
-    before = len(df)
-    df = df[~(df["Product1"].isin(REMOVED_PRODUCTS) | df["Product2"].isin(REMOVED_PRODUCTS))]
-    after = len(df)
+        data = rows[1:]
+        records = []
+        for r in data:
+            if len(r) <= max(idxs + ([idx3] if idx3 is not None else [0])): 
+                continue
+            rec = {
+                "Product1": r[idx1],
+                "Product2": r[idx2],
+                "TasteScore": r[idx3] if idx3 is not None else ""
+            }
+            records.append(rec)
+        df = pd.DataFrame(records, columns=expected_headers)
+    else:
+        data = rows[1:]
+        df = pd.DataFrame(data, columns=expected_headers)
 
-    # If rows were deleted → rewrite clean sheet
-    if after < before:
-             st.warning(f"🧹 Cleaning Google Sheet: removed {before - after} old ratings with unwanted products.")
-             sheet.clear()
-             sheet.append_row(expected_headers)
-    
-    # Batch append for efficiency and to avoid rate limits
-             if not df.empty:
-                 sheet.append_rows(df.values.tolist(), value_input_option="USER_ENTERED")
-
-
+    # IMPORTANT: ignore unwanted products in-memory (no deletion)
+    mask_ok = ~(
+        df["Product1"].isin(REMOVED_PRODUCTS) | df["Product2"].isin(REMOVED_PRODUCTS)
+    )
+    df = df[mask_ok].reset_index(drop=True)
     return df
 
 # --------------------------
-# 5. COMPUTE REMAINING PAIRS
+# 5. COMPUTE REMAINING (READ-ONLY)
 # --------------------------
 def compute_remaining():
-    existing_df = load_and_clean_existing_pairs()
-    all_pairs = pd.DataFrame(list(itertools.combinations(PRODUCTS, 2)), columns=["Product1", "Product2"])
+    existing_df = load_existing_pairs_readonly()
+
+    # Build pairs only from the kept PRODUCTS
+    all_pairs = pd.DataFrame(
+        list(itertools.combinations(PRODUCTS, 2)),
+        columns=["Product1", "Product2"]
+    )
+
+    # Remove already-rated pairs (inner join by exact match)
     remaining = all_pairs.merge(
-        existing_df[["Product1", "Product2"]], on=["Product1", "Product2"], how="left", indicator=True
+        existing_df[["Product1", "Product2"]],
+        on=["Product1", "Product2"],
+        how="left",
+        indicator=True
     )
     remaining = remaining[remaining["_merge"] == "left_only"].drop(columns="_merge")
     return all_pairs, existing_df, remaining
 
-all_pairs, existing_df, remaining_pairs = compute_remaining()
-total_pairs = len(all_pairs)
-answered_pairs = total_pairs - len(remaining_pairs)
-progress = answered_pairs / total_pairs
+
+
 
 # --------------------------
 # 6. STATE MANAGEMENT
