@@ -36,7 +36,7 @@ PRODUCTS = [
     "Chicken breasts","Chicken thighs","Chicken wings","Minced chicken","Cordon bleu","Minced beef",
     "Beef steak","Roast beef","Filet of beef","Pork chops","Filet mignon","French Fries","Pork roast",
     "Minced pork","Bacon","Sausages","Veal","Smoked Salmon","Salmon steak","Cod","Perch fillets",
-    "Tuna","Sardines","Shrimps","Mussels","Surimi","Pasta","Mixed rice","quinoa","couscous","Porridge"
+    "Tuna","Sardines","Shrimps","Mussels","Surimi","Pasta","Mixed rice","quinoa","couscous","Porridge", "Almonds", "Tomato sauce", "Red beans"
 ]
 # de-duplicate (e.g., Lettuce/Spinach appear twice)
 PRODUCTS = list(dict.fromkeys(PRODUCTS))
