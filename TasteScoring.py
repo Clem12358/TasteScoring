@@ -44,7 +44,7 @@ PRODUCTS = list(dict.fromkeys(PRODUCTS))
 # Products you never want to rate again (filtered IN-MEMORY ONLY; no deletions)
 REMOVED_PRODUCTS = [
     "Kefir", "Celery", "Raspberry yogurt", "Ricotta", "fondue cheese", "Skyr",
-    "Surimi", "Pomegranates", "staberry yogurt", "Celeriac", "Chili peppers", "Melons", "Fennel", "spinach", "Parsley root", "Mascarpone", "Limes", "Blackberries", "fromage frais"
+    "Surimi", "Pomegranates", "staberry yogurt", "Celeriac", "Chili peppers", "Melons", "Fennel", "spinach", "Parsley root", "Mascarpone", "Limes", "Blackberries", "Fromage frais"
 ]
 PRODUCTS = [p for p in PRODUCTS if p not in REMOVED_PRODUCTS]
 
